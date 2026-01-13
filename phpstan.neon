@@ -1,0 +1,22 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - config
+        - routes
+        - tests
+
+    # Уровень анализа (0-9, где 9 - самый строгий)
+    level: 8
+
+    ignoreErrors:
+        # Игнорируем ошибки, если нужно
+        # - '#Call to an undefined method.*#'
+
+    excludePaths:
+        - ./*/*/FileToIgnore.php
+
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
