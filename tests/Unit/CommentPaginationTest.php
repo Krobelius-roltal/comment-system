@@ -196,7 +196,7 @@ class CommentPaginationTest extends TestCase
             'commentable_id' => $news->id,
         ]);
 
-        $limit = min(150, 100); // Максимальный лимит 100
+        $limit = min(150, 100);
         $offset = 0;
 
         $query = $news->comments();

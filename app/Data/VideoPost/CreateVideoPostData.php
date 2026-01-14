@@ -12,7 +12,6 @@ class CreateVideoPostData extends Data
     public function __construct(
         #[Required, StringType, Max(255)]
         public string $title,
-
         #[Required, StringType]
         public string $description,
     ) {

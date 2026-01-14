@@ -2,60 +2,34 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Data\Comment\CommentData;
-use App\Data\News\CreateNewsData;
-use App\Data\News\NewsData;
+use App\Handlers\News\CreateNewsHandler;
+use App\Handlers\News\ShowNewsHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateNewsRequest;
-use App\Models\News;
+use App\Http\Requests\ShowNewsRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
+    public function __construct(
+        private readonly CreateNewsHandler $create_news_handler,
+        private readonly ShowNewsHandler $show_news_handler,
+    ) {
+    }
+
     public function store(CreateNewsRequest $request): JsonResponse
     {
         $dto = $request->toDto();
+        $news_data = $this->create_news_handler->handle($dto);
 
-        $news = News::create([
-            'title' => $dto->title,
-            'description' => $dto->description,
-        ]);
-
-        return response()->json(
-            NewsData::fromModel($news)->toArray(),
-            201
-        );
+        return response()->json($news_data->toArray(), 201);
     }
 
-    public function show(int $id, Request $request): JsonResponse
+    public function show(int $id, ShowNewsRequest $request): JsonResponse
     {
-        $news = News::findOrFail($id);
+        $pagination_dto = $request->toDto();
+        $data = $this->show_news_handler->handle($id, $pagination_dto);
 
-        $limit = min((int) $request->get('limit', 10), 100);
-        $offset = max((int) $request->get('offset', 0), 0);
-
-        $commentsQuery = $news->comments()->with('user');
-        $total = $commentsQuery->count();
-
-        $comments = $commentsQuery->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->limit($limit)
-            ->offset($offset)
-            ->get();
-
-        $newsData = NewsData::fromModel($news);
-        $commentsData = $comments->map(fn($comment) => CommentData::fromModel($comment));
-
-        return response()->json([
-            ...$newsData->toArray(),
-            'comments' => [
-                'data' => $commentsData->map(fn($data) => $data->toArray())->toArray(),
-                'total' => $total,
-                'limit' => $limit,
-                'offset' => $offset,
-                'has_more' => ($offset + $limit) < $total,
-            ],
-        ]);
+        return response()->json($data);
     }
 }

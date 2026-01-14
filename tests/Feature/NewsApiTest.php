@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Comment;
 use App\Models\News;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,13 +25,13 @@ class NewsApiTest extends TestCase
         $response = $this->postJson('/api/v1/news', $newsData);
 
         $response->assertStatus(201)
-                 ->assertJsonStructure([
-                     'id',
-                     'title',
-                     'description',
-                     'created_at',
-                     'updated_at'
-                 ]);
+            ->assertJsonStructure([
+                'id',
+                'title',
+                'description',
+                'created_at',
+                'updated_at',
+            ]);
 
         $this->assertDatabaseHas('news', $newsData);
     }
@@ -61,7 +62,7 @@ class NewsApiTest extends TestCase
             'email' => 'test@example.com',
         ]);
 
-        $comments = \App\Models\Comment::factory()->count(5)->create([
+        $comments = Comment::factory()->count(5)->create([
             'user_id' => $user->id,
             'commentable_type' => News::class,
             'commentable_id' => $news->id,
@@ -70,20 +71,20 @@ class NewsApiTest extends TestCase
         $response = $this->getJson("/api/v1/news/{$news->id}?limit=10&offset=0");
 
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     'id',
-                     'title',
-                     'description',
-                     'created_at',
-                     'updated_at',
-                     'comments' => [
-                         'data',
-                         'total',
-                         'limit',
-                         'offset',
-                         'has_more'
-                     ]
-                 ]);
+            ->assertJsonStructure([
+                'id',
+                'title',
+                'description',
+                'created_at',
+                'updated_at',
+                'comments' => [
+                    'data',
+                    'total',
+                    'limit',
+                    'offset',
+                    'has_more',
+                ],
+            ]);
 
         $data = $response->json();
         $this->assertCount(5, $data['comments']['data']);
@@ -92,19 +93,16 @@ class NewsApiTest extends TestCase
 
     public function test_news_validation(): void
     {
-        // Тест без title
         $response = $this->postJson('/api/v1/news', [
             'description' => 'Test Description',
         ]);
         $response->assertStatus(422);
 
-        // Тест без description
         $response = $this->postJson('/api/v1/news', [
             'title' => 'Test Title',
         ]);
         $response->assertStatus(422);
 
-        // Тест с пустым title
         $response = $this->postJson('/api/v1/news', [
             'title' => '',
             'description' => 'Test Description',

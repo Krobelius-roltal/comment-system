@@ -33,23 +33,23 @@ class CommentApiTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-                 ->assertJsonStructure([
-                     'id',
-                     'user_id',
-                     'commentable_type',
-                     'commentable_id',
-                     'parent_id',
-                     'content',
-                     'created_at',
-                     'updated_at',
-                     'user'
-                 ])
-                 ->assertJson([
-                     'user_id' => $user->id,
-                     'commentable_id' => $news->id,
-                     'content' => 'Test comment to news',
-                     'parent_id' => null,
-                 ]);
+            ->assertJsonStructure([
+                'id',
+                'user_id',
+                'commentable_type',
+                'commentable_id',
+                'parent_id',
+                'content',
+                'created_at',
+                'updated_at',
+                'user',
+            ])
+            ->assertJson([
+                'user_id' => $user->id,
+                'commentable_id' => $news->id,
+                'content' => 'Test comment to news',
+                'parent_id' => null,
+            ]);
 
         $this->assertDatabaseHas('comments', [
             'user_id' => $user->id,
@@ -78,12 +78,12 @@ class CommentApiTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-                 ->assertJson([
-                     'user_id' => $user->id,
-                     'commentable_id' => $videoPost->id,
-                     'content' => 'Test comment to video post',
-                     'parent_id' => null,
-                 ]);
+            ->assertJson([
+                'user_id' => $user->id,
+                'commentable_id' => $videoPost->id,
+                'content' => 'Test comment to video post',
+                'parent_id' => null,
+            ]);
 
         $this->assertDatabaseHas('comments', [
             'user_id' => $user->id,
@@ -120,10 +120,10 @@ class CommentApiTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-                 ->assertJson([
-                     'parent_id' => $parentComment->id,
-                     'content' => 'Reply to comment',
-                 ]);
+            ->assertJson([
+                'parent_id' => $parentComment->id,
+                'content' => 'Reply to comment',
+            ]);
 
         $this->assertDatabaseHas('comments', [
             'parent_id' => $parentComment->id,
@@ -152,13 +152,13 @@ class CommentApiTest extends TestCase
         $response = $this->getJson("/api/v1/comments?commentable_type=news&commentable_id={$news->id}");
 
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     'data',
-                     'total',
-                     'limit',
-                     'offset',
-                     'has_more'
-                 ]);
+            ->assertJsonStructure([
+                'data',
+                'total',
+                'limit',
+                'offset',
+                'has_more',
+            ]);
 
         $data = $response->json();
         $this->assertCount(3, $data['data']);
@@ -187,17 +187,17 @@ class CommentApiTest extends TestCase
         $response = $this->getJson("/api/v1/comments/{$comment->id}");
 
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     'id',
-                     'user_id',
-                     'content',
-                     'user',
-                     'commentable'
-                 ])
-                 ->assertJson([
-                     'id' => $comment->id,
-                     'content' => 'Test comment content',
-                 ]);
+            ->assertJsonStructure([
+                'id',
+                'user_id',
+                'content',
+                'user',
+                'commentable',
+            ])
+            ->assertJson([
+                'id' => $comment->id,
+                'content' => 'Test comment content',
+            ]);
     }
 
     public function test_can_update_comment(): void
@@ -224,9 +224,9 @@ class CommentApiTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                 ->assertJson([
-                     'content' => 'Updated content',
-                 ]);
+            ->assertJson([
+                'content' => 'Updated content',
+            ]);
 
         $this->assertDatabaseHas('comments', [
             'id' => $comment->id,
@@ -264,7 +264,6 @@ class CommentApiTest extends TestCase
 
     public function test_comment_validation(): void
     {
-        // Тест без user_id
         $response = $this->postJson('/api/v1/comments', [
             'commentable_type' => 'news',
             'commentable_id' => 1,
@@ -272,7 +271,6 @@ class CommentApiTest extends TestCase
         ]);
         $response->assertStatus(422);
 
-        // Тест без commentable_type
         $response = $this->postJson('/api/v1/comments', [
             'user_id' => 1,
             'commentable_id' => 1,
@@ -280,7 +278,6 @@ class CommentApiTest extends TestCase
         ]);
         $response->assertStatus(422);
 
-        // Тест без content
         $response = $this->postJson('/api/v1/comments', [
             'user_id' => 1,
             'commentable_type' => 'news',
@@ -288,7 +285,6 @@ class CommentApiTest extends TestCase
         ]);
         $response->assertStatus(422);
 
-        // Тест с пустым content
         $response = $this->postJson('/api/v1/comments', [
             'user_id' => 1,
             'commentable_type' => 'news',
@@ -333,16 +329,13 @@ class CommentApiTest extends TestCase
             'content' => 'Reply 2',
         ]);
 
-        // Удаляем родительский комментарий
         $response = $this->deleteJson("/api/v1/comments/{$parentComment->id}");
         $response->assertStatus(204);
 
-        // Проверяем, что родительский комментарий удален
         $this->assertDatabaseMissing('comments', [
             'id' => $parentComment->id,
         ]);
 
-        // Проверяем, что ответы также удалены (каскадное удаление на уровне БД)
         $this->assertDatabaseMissing('comments', [
             'id' => $reply1->id,
         ]);
@@ -367,7 +360,6 @@ class CommentApiTest extends TestCase
             'email' => 'test@example.com',
         ]);
 
-        // Создаем 25 комментариев с уникальными данными
         Comment::factory()->count(25)->create([
             'user_id' => $user->id,
             'commentable_type' => News::class,
@@ -377,15 +369,15 @@ class CommentApiTest extends TestCase
         $response = $this->getJson("/api/v1/news/{$news->id}?limit={$limit}&offset={$offset}");
 
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     'comments' => [
-                         'data',
-                         'total',
-                         'limit',
-                         'offset',
-                         'has_more'
-                     ]
-                 ]);
+            ->assertJsonStructure([
+                'comments' => [
+                    'data',
+                    'total',
+                    'limit',
+                    'offset',
+                    'has_more',
+                ],
+            ]);
 
         $data = $response->json();
         $this->assertCount($expectedCount, $data['comments']['data']);
@@ -444,7 +436,6 @@ class CommentApiTest extends TestCase
             'content' => 'Parent comment',
         ]);
 
-        // Создаем 15 ответов на комментарий
         Comment::factory()->count(15)->create([
             'user_id' => $user->id,
             'commentable_type' => News::class,
@@ -455,20 +446,19 @@ class CommentApiTest extends TestCase
         $response = $this->getJson("/api/v1/comments?commentable_type=news&commentable_id={$news->id}&parent_id={$parentComment->id}&limit=10&offset=0");
 
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     'data',
-                     'total',
-                     'limit',
-                     'offset',
-                     'has_more'
-                 ]);
+            ->assertJsonStructure([
+                'data',
+                'total',
+                'limit',
+                'offset',
+                'has_more',
+            ]);
 
         $data = $response->json();
         $this->assertCount(10, $data['data']);
         $this->assertEquals(15, $data['total']);
         $this->assertTrue($data['has_more']);
 
-        // Проверяем вторую страницу
         $response = $this->getJson("/api/v1/comments?commentable_type=news&commentable_id={$news->id}&parent_id={$parentComment->id}&limit=10&offset=10");
 
         $data = $response->json();
