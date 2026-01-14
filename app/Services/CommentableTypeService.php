@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Exceptions\NewsNotFoundException;
+use App\Exceptions\VideoPostNotFoundException;
 use App\Models\News;
 use App\Models\VideoPost;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +24,14 @@ class CommentableTypeService
     {
         $model_class = $this->getModelClass($type);
         /** @var Model $model_class */
-        $model_class::findOrFail($id);
+        $model = $model_class::find($id);
+        
+        if (!$model) {
+            match ($type) {
+                'news' => throw new NewsNotFoundException($id),
+                'video-post' => throw new VideoPostNotFoundException($id),
+                default => throw new InvalidArgumentException("Invalid commentable_type: {$type}"),
+            };
+        }
     }
 }

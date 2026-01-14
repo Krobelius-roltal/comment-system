@@ -3,13 +3,17 @@
 namespace App\Handlers\Comment;
 
 use App\Data\Comment\CommentData;
+use App\Exceptions\CommentNotFoundException;
 use App\Models\Comment;
 
 class ShowCommentHandler
 {
     public function handle(int $id): array
     {
-        $comment = Comment::with(['user', 'commentable'])->findOrFail($id);
+        $comment = Comment::with(['user', 'commentable'])->find($id);
+        if (!$comment) {
+            throw new CommentNotFoundException($id);
+        }
 
         $comment_data = CommentData::fromModel($comment);
 

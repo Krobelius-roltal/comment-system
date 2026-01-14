@@ -68,7 +68,7 @@ class NewsApiTest extends TestCase
             'commentable_id' => $news->id,
         ]);
 
-        $response = $this->getJson("/api/v1/news/{$news->id}?limit=10&offset=0");
+        $response = $this->getJson("/api/v1/news/{$news->id}?limit=10");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -79,16 +79,15 @@ class NewsApiTest extends TestCase
                 'updated_at',
                 'comments' => [
                     'data',
-                    'total',
                     'limit',
-                    'offset',
+                    'next_cursor',
                     'has_more',
                 ],
             ]);
 
         $data = $response->json();
         $this->assertCount(5, $data['comments']['data']);
-        $this->assertEquals(5, $data['comments']['total']);
+        $this->assertFalse($data['comments']['has_more']);
     }
 
     public function test_news_validation(): void

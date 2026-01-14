@@ -154,15 +154,14 @@ class CommentApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'data',
-                'total',
                 'limit',
-                'offset',
+                'next_cursor',
                 'has_more',
             ]);
 
         $data = $response->json();
         $this->assertCount(3, $data['data']);
-        $this->assertEquals(3, $data['total']);
+        $this->assertFalse($data['has_more']);
     }
 
     public function test_can_get_comment(): void
@@ -345,10 +344,7 @@ class CommentApiTest extends TestCase
         ]);
     }
 
-    /**
-     * @dataProvider paginationProvider
-     */
-    public function test_comment_pagination(int $limit, int $offset, int $expectedCount, bool $expectedHasMore): void
+    public function test_comment_cursor_pagination(): void
     {
         $news = News::factory()->create([
             'title' => 'Test News for Pagination',
@@ -360,61 +356,50 @@ class CommentApiTest extends TestCase
             'email' => 'test@example.com',
         ]);
 
-        Comment::factory()->count(25)->create([
+        $comments = Comment::factory()->count(25)->create([
             'user_id' => $user->id,
             'commentable_type' => News::class,
             'commentable_id' => $news->id,
         ]);
 
-        $response = $this->getJson("/api/v1/news/{$news->id}?limit={$limit}&offset={$offset}");
+        // First page
+        $response = $this->getJson("/api/v1/news/{$news->id}?limit=10");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'comments' => [
                     'data',
-                    'total',
                     'limit',
-                    'offset',
+                    'next_cursor',
                     'has_more',
                 ],
             ]);
 
         $data = $response->json();
-        $this->assertCount($expectedCount, $data['comments']['data']);
-        $this->assertEquals(25, $data['comments']['total']);
-        $this->assertEquals($limit, $data['comments']['limit']);
-        $this->assertEquals($offset, $data['comments']['offset']);
-        $this->assertEquals($expectedHasMore, $data['comments']['has_more']);
-    }
+        $this->assertCount(10, $data['comments']['data']);
+        $this->assertEquals(10, $data['comments']['limit']);
+        $this->assertNotNull($data['comments']['next_cursor']);
+        $this->assertTrue($data['comments']['has_more']);
 
-    public static function paginationProvider(): array
-    {
-        return [
-            'first page' => [
-                'limit' => 10,
-                'offset' => 0,
-                'expectedCount' => 10,
-                'expectedHasMore' => true,
-            ],
-            'second page' => [
-                'limit' => 10,
-                'offset' => 10,
-                'expectedCount' => 10,
-                'expectedHasMore' => true,
-            ],
-            'last page' => [
-                'limit' => 10,
-                'offset' => 20,
-                'expectedCount' => 5,
-                'expectedHasMore' => false,
-            ],
-            'single item page' => [
-                'limit' => 1,
-                'offset' => 0,
-                'expectedCount' => 1,
-                'expectedHasMore' => true,
-            ],
-        ];
+        $firstPageLastId = $data['comments']['data'][9]['id'];
+
+        // Second page using cursor
+        $response = $this->getJson("/api/v1/news/{$news->id}?limit=10&cursor={$firstPageLastId}");
+
+        $data = $response->json();
+        $this->assertCount(10, $data['comments']['data']);
+        $this->assertNotNull($data['comments']['next_cursor']);
+        $this->assertTrue($data['comments']['has_more']);
+
+        $secondPageLastId = $data['comments']['data'][9]['id'];
+
+        // Third page (last page)
+        $response = $this->getJson("/api/v1/news/{$news->id}?limit=10&cursor={$secondPageLastId}");
+
+        $data = $response->json();
+        $this->assertCount(5, $data['comments']['data']);
+        $this->assertNull($data['comments']['next_cursor']);
+        $this->assertFalse($data['comments']['has_more']);
     }
 
     public function test_nested_comments_pagination(): void
@@ -443,26 +428,28 @@ class CommentApiTest extends TestCase
             'parent_id' => $parentComment->id,
         ]);
 
-        $response = $this->getJson("/api/v1/comments?commentable_type=news&commentable_id={$news->id}&parent_id={$parentComment->id}&limit=10&offset=0");
+        $response = $this->getJson("/api/v1/comments?commentable_type=news&commentable_id={$news->id}&parent_id={$parentComment->id}&limit=10");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'data',
-                'total',
                 'limit',
-                'offset',
+                'next_cursor',
                 'has_more',
             ]);
 
         $data = $response->json();
         $this->assertCount(10, $data['data']);
-        $this->assertEquals(15, $data['total']);
+        $this->assertNotNull($data['next_cursor']);
         $this->assertTrue($data['has_more']);
 
-        $response = $this->getJson("/api/v1/comments?commentable_type=news&commentable_id={$news->id}&parent_id={$parentComment->id}&limit=10&offset=10");
+        $firstPageLastId = $data['data'][9]['id'];
+
+        $response = $this->getJson("/api/v1/comments?commentable_type=news&commentable_id={$news->id}&parent_id={$parentComment->id}&limit=10&cursor={$firstPageLastId}");
 
         $data = $response->json();
         $this->assertCount(5, $data['data']);
+        $this->assertNull($data['next_cursor']);
         $this->assertFalse($data['has_more']);
     }
 }

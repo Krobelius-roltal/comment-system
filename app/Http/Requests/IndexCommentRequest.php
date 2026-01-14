@@ -18,8 +18,8 @@ class IndexCommentRequest extends FormRequest
         if (!isset($data['parent_id']) && $this->has('parent_id')) {
             $data['parent_id'] = (int) $this->input('parent_id');
         }
-        if (!isset($data['offset']) && $this->has('offset')) {
-            $data['offset'] = (int) $this->input('offset', 0);
+        if (!isset($data['cursor']) && $this->has('cursor')) {
+            $data['cursor'] = (int) $this->input('cursor');
         }
         if (!isset($data['limit']) && $this->has('limit')) {
             $data['limit'] = (int) $this->input('limit', 10);

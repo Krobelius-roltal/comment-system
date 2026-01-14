@@ -12,8 +12,8 @@ class PaginationData extends Data
     public function __construct(
         #[IntegerType, Min(1), Max(100)]
         public ?int $limit = 10,
-        #[IntegerType, Min(0)]
-        public ?int $offset = 0,
+        #[IntegerType]
+        public ?int $cursor = null,
     ) {
     }
 
@@ -22,8 +22,8 @@ class PaginationData extends Data
         return min($this->limit ?? 10, 100);
     }
 
-    public function getOffset(): int
+    public function getCursor(): ?int
     {
-        return max($this->offset ?? 0, 0);
+        return $this->cursor;
     }
 }

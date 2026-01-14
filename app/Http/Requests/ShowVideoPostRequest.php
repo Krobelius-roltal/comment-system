@@ -15,8 +15,8 @@ class ShowVideoPostRequest extends FormRequest
     public function toDto(): PaginationData
     {
         $data = $this->validated();
-        if (!isset($data['offset']) && $this->has('offset')) {
-            $data['offset'] = (int) $this->input('offset', 0);
+        if (!isset($data['cursor']) && $this->has('cursor')) {
+            $data['cursor'] = (int) $this->input('cursor');
         }
         if (!isset($data['limit']) && $this->has('limit')) {
             $data['limit'] = (int) $this->input('limit', 10);

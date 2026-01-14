@@ -68,7 +68,7 @@ class VideoPostApiTest extends TestCase
             'commentable_id' => $videoPost->id,
         ]);
 
-        $response = $this->getJson("/api/v1/video-posts/{$videoPost->id}?limit=10&offset=0");
+        $response = $this->getJson("/api/v1/video-posts/{$videoPost->id}?limit=10");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -79,16 +79,15 @@ class VideoPostApiTest extends TestCase
                 'updated_at',
                 'comments' => [
                     'data',
-                    'total',
                     'limit',
-                    'offset',
+                    'next_cursor',
                     'has_more',
                 ],
             ]);
 
         $data = $response->json();
         $this->assertCount(5, $data['comments']['data']);
-        $this->assertEquals(5, $data['comments']['total']);
+        $this->assertFalse($data['comments']['has_more']);
     }
 
     public function test_video_post_validation(): void

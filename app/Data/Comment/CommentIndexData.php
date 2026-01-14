@@ -21,8 +21,8 @@ class CommentIndexData extends Data
         public ?int $parent_id = null,
         #[IntegerType, Min(1), Max(100)]
         public ?int $limit = 10,
-        #[IntegerType, Min(0)]
-        public ?int $offset = 0,
+        #[IntegerType]
+        public ?int $cursor = null,
     ) {
     }
 
@@ -31,8 +31,8 @@ class CommentIndexData extends Data
         return min($this->limit ?? 10, 100);
     }
 
-    public function getOffset(): int
+    public function getCursor(): ?int
     {
-        return max($this->offset ?? 0, 0);
+        return $this->cursor;
     }
 }

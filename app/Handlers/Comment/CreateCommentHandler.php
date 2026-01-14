@@ -4,6 +4,7 @@ namespace App\Handlers\Comment;
 
 use App\Data\Comment\CommentData;
 use App\Data\Comment\CreateCommentData;
+use App\Exceptions\CommentNotFoundException;
 use App\Models\Comment;
 use App\Services\CommentableTypeService;
 
@@ -21,7 +22,10 @@ readonly class CreateCommentHandler
         $this->commentable_type_service->validateCommentableExists($dto->commentable_type, $dto->commentable_id);
 
         if ($dto->parent_id !== null) {
-            Comment::findOrFail($dto->parent_id);
+            $parent_comment = Comment::find($dto->parent_id);
+            if (!$parent_comment) {
+                throw new CommentNotFoundException($dto->parent_id);
+            }
         }
 
         $comment = Comment::create([

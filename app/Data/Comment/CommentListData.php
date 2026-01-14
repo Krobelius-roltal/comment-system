@@ -11,10 +11,9 @@ class CommentListData extends Data
      */
     public function __construct(
         public array $data,
-        public int $total,
         public int $limit,
-        public int $offset,
-        public bool $has_more,
+        public ?int $next_cursor = null,
+        public bool $has_more = false,
     ) {
     }
 }
